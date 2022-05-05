@@ -10,7 +10,7 @@ Maven 依赖导入
 <dependency>
     <groupId>cn.xiejx</groupId>
     <artifactId>cacher</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 </dependency>
 ```
 Java 使用
