@@ -8,7 +8,7 @@
 Maven 依赖导入
 ```xml
 <dependency>
-    <groupId>cn.xjx</groupId>
+    <groupId>cn.xiejx</groupId>
     <artifactId>cacher</artifactId>
     <version>0.0.1</version>
 </dependency>

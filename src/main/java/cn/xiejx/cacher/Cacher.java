@@ -1,7 +1,7 @@
-package cn.xjx.cacher;
+package cn.xiejx.cacher;
 
-import cn.xjx.cacher.cache.CacheObject;
-import cn.xjx.cacher.cache.ExpireWayEnum;
+import cn.xiejx.cacher.cache.CacheObject;
+import cn.xiejx.cacher.cache.ExpireWayEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,6 +1,6 @@
-package cn.xjx.cacher;
+package cn.xiejx.cacher;
 
-import cn.xjx.cacher.cache.ExpireWayEnum;
+import cn.xiejx.cacher.cache.ExpireWayEnum;
 
 import java.util.concurrent.TimeUnit;
 

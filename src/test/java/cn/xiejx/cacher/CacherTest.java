@@ -1,6 +1,6 @@
-package cn.xjx.cacher;
+package cn.xiejx.cacher;
 
-import cn.xjx.cacher.cache.ExpireWayEnum;
+import cn.xiejx.cacher.cache.ExpireWayEnum;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +36,7 @@ public class CacherTest {
         // 缓存修改为 aaa，过期时间修改为 5000 毫秒
         cacher.set(111, "aaa", 5000L);
         // 删除 key = 222 的缓存
-        cacher.remove(222);
+        String remove = cacher.remove(222);
         // 获取 key = 111 的缓存，过期时间仍为创建开始后 5000 毫秒
         String s1 = cacher.get(111);
         // 获取 key = 333 的缓存，过期时间刷新，从当前开始计时后 3500 毫秒

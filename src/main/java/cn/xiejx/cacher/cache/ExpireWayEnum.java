@@ -1,4 +1,4 @@
-package cn.xjx.cacher.cache;
+package cn.xiejx.cacher.cache;
 
 /**
  * 过期策略枚举
