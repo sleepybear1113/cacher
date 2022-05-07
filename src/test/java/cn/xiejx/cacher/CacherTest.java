@@ -20,11 +20,11 @@ public class CacherTest {
     @Test
     public void test() {
         // 构建 CacherBuilder，填充相关参数
-        CacherBuilder cacherBuilder = new CacherBuilder()
+        CacherBuilder<Integer, String> cacherBuilder = new CacherBuilder<Integer, String>()
                 // 每隔 10 秒扫一遍 Map 清理过期
                 .delay(10, TimeUnit.SECONDS)
                 // 运行时展示清理日志
-                .showAllLogs();
+                .showAllLogs().cacherLoader(10000L, key -> null);
         // 生成 Cacher 对象
         Cacher<Integer, String> cacher = cacherBuilder.build();
         // 无过期的缓存

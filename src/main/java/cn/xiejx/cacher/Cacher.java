@@ -2,6 +2,8 @@ package cn.xiejx.cacher;
 
 import cn.xiejx.cacher.cache.CacheObject;
 import cn.xiejx.cacher.cache.ExpireWayEnum;
+import cn.xiejx.cacher.loader.CacherValueLoader;
+import cn.xiejx.cacher.loader.ExpireTimeLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * There is description
@@ -30,7 +33,6 @@ public class Cacher<K, V> implements Serializable {
 
     private ScheduledExecutorService scheduledExecutorService;
 
-
     private ExpireWayEnum expireWayEnum;
 
     /**
@@ -45,18 +47,28 @@ public class Cacher<K, V> implements Serializable {
     private TimeUnit timeUnit;
     private boolean fixRate;
 
-    private boolean showExpireTime;
-    private boolean showRemovedKey;
-    private boolean showRemovedValue;
+    private boolean showExpireTimeLog;
+    private boolean showRemoveInfoLog;
+    private boolean showLoadInfoLog;
 
-    public Cacher(ExpireWayEnum expireWayEnum, boolean keepOldExpireWay, int corePoolSize, String scheduleName, long initialDelay, long delay, TimeUnit timeUnit, boolean fixRate, int initialCapacity, float loadFactor, boolean showExpireTime, boolean showRemovedKey, boolean showRemovedValue) {
+    private CacherValueLoader<K, V> cacherValueLoader;
+
+    private ExpireTimeLoader<K> expireTimeLoader;
+
+    public Cacher(ExpireWayEnum expireWayEnum, boolean keepOldExpireWay, int corePoolSize, String scheduleName, long initialDelay, long delay, TimeUnit timeUnit, boolean fixRate, int initialCapacity, float loadFactor, boolean showExpireTimeLog, boolean showRemoveInfoLog, boolean showLoadInfoLog, CacherValueLoader<K, V> cacherValueLoader, ExpireTimeLoader<K> expireTimeLoader) {
         this.expireWayEnum = expireWayEnum;
         this.keepOldExpireWay = keepOldExpireWay;
-        this.showExpireTime = showExpireTime;
-        this.showRemovedKey = showRemovedKey;
-        this.showRemovedValue = showRemovedValue;
+        this.showExpireTimeLog = showExpireTimeLog;
+        this.showRemoveInfoLog = showRemoveInfoLog;
+        this.showLoadInfoLog = showLoadInfoLog;
+        this.cacherValueLoader = cacherValueLoader;
+        this.expireTimeLoader = expireTimeLoader;
         MAP = new ConcurrentHashMap<>(initialCapacity, loadFactor);
         resetExpireSchedule(corePoolSize, scheduleName, initialDelay, delay, timeUnit, fixRate);
+    }
+
+    public Cacher(CacherBuilder<K, V> c) {
+        this(c.expireWayEnum, c.keepOldExpireWay, c.corePoolSize, c.scheduleName, c.initialDelay, c.delay, c.timeUnit, c.fixRate, c.initialCapacity, c.loadFactor, c.showExpireTimeLog, c.showRemoveInfoLog, c.showLoadInfoLog, c.cacherValueLoader, c.expireTimeLoader);
     }
 
     public void put(K key, V value) {
@@ -106,28 +118,37 @@ public class Cacher<K, V> implements Serializable {
     }
 
     public CacheObject<V> getCacheObjectPure(K key) {
+        // 先获取 value
         CacheObject<V> cacheObject = MAP.get(key);
-        if (cacheObject == null) {
+        // 判断 value 是否存在
+        if (cacheObject != null) {
+            // value 存在，则判断是否过期
+            boolean expire = cacheObject.isExpire(this.expireWayEnum, this.keepOldExpireWay);
+            if (!expire) {
+                // 如果没有过期，那么直接返回
+                return cacheObject;
+            }
+        }
+        // 下面则是走 load 过程，要么是 value 不存在，要么是过期了
+
+        if (cacheObject != null) {
+            // 如果 value 存在，那么就一定是过期的，直接删除就行了
+            removeReturnCacheObject(key);
+            // 打印日志
+            if (this.showRemoveInfoLog) {
+                log.info("[{}] expire: key = {}, value = {}", this.scheduleName, key, cacheObject.getObjPure().toString());
+            }
+        }
+
+        // 先 load 获取最新的 value
+        CacheObject<V> load = load(key);
+        if (load == null) {
+            // 如果 load value 为空，那么直接返回就行了
             return null;
         }
-        boolean expire = cacheObject.isExpire(this.expireWayEnum, this.keepOldExpireWay);
-        if (expire) {
-            MAP.remove(key);
-
-            StringBuilder info = new StringBuilder("expire: ");
-            if (this.showRemovedKey) {
-                info.append("[key = ").append(key).append("].");
-            }
-            if (this.showRemovedValue) {
-                info.append("[value = ").append(cacheObject.getObjPure()).append("].");
-            }
-            if (this.showRemovedKey || this.showRemovedValue) {
-                log.info("[" + this.scheduleName + "] " + info);
-            }
-            return null;
-        }
-
-        return cacheObject;
+        // 回填到 MAP
+        put(key, load);
+        return load;
     }
 
     public void resetExpireSchedule() {
@@ -165,7 +186,7 @@ public class Cacher<K, V> implements Serializable {
     }
 
     public void expire() {
-        if (this.showExpireTime) {
+        if (this.showExpireTimeLog) {
             log.info("[" + this.scheduleName + "] begin clear expired...");
         }
 
@@ -174,6 +195,12 @@ public class Cacher<K, V> implements Serializable {
         }
     }
 
+    /**
+     * 直接删除缓存，不走 loader
+     *
+     * @param key key
+     * @return 缓存对象
+     */
     public V remove(K key) {
         CacheObject<V> cacheObject = removeReturnCacheObject(key);
         return cacheObject == null ? null : cacheObject.getObj();
@@ -181,6 +208,42 @@ public class Cacher<K, V> implements Serializable {
 
     public CacheObject<V> removeReturnCacheObject(K key) {
         return MAP.remove(key);
+    }
+
+    private CacheObject<V> load(K key) {
+        if (this.cacherValueLoader == null) {
+            return null;
+        }
+        V value = cacherValueLoader.load(key);
+        if (value == null) {
+            if (this.showLoadInfoLog) {
+                log.info("[{}] load no value, key = {}", this.scheduleName, key);
+            }
+            return null;
+        }
+        Long expireTime = expireTimeLoader.getLoadExpireTime(key);
+        if (this.showLoadInfoLog) {
+            log.info("[{}] load key = {}, expireTime = {}, value = {}", this.scheduleName, key, expireTime, value);
+        }
+        return new CacheObject<>(value, expireTime, this.expireWayEnum);
+    }
+
+    public void printAllValues() {
+        printAllValues(System.out::println, ",");
+    }
+
+    public void printAllValues(Consumer<String> fun, String split) {
+        Set<Map.Entry<K, CacheObject<V>>> entries = entrySet();
+        StringBuilder info = new StringBuilder();
+        for (Map.Entry<K, CacheObject<V>> kv : entries) {
+            CacheObject<V> cacheObject = kv.getValue();
+            info.append("{key=").append(kv.getKey()).append(", value=").append(cacheObject.getObjPure());
+            if (cacheObject.isExpire(this.expireWayEnum, this.keepOldExpireWay)) {
+                info.append(", expire");
+            }
+            info.append("}").append(split);
+        }
+        fun.accept(info.toString());
     }
 
     public int size() {
@@ -219,28 +282,53 @@ public class Cacher<K, V> implements Serializable {
         this.keepOldExpireWay = false;
     }
 
-    public boolean isShowExpireTime() {
-        return showExpireTime;
+    public boolean isShowExpireTimeLog() {
+        return showExpireTimeLog;
     }
 
-    public void setShowExpireTime(boolean showExpireTime) {
-        this.showExpireTime = showExpireTime;
+    public void setShowExpireTimeLog(boolean showExpireTimeLog) {
+        this.showExpireTimeLog = showExpireTimeLog;
     }
 
-    public boolean isShowRemovedKey() {
-        return showRemovedKey;
+    public boolean isShowRemoveInfoLog() {
+        return showRemoveInfoLog;
     }
 
-    public void setShowRemovedKey(boolean showRemovedKey) {
-        this.showRemovedKey = showRemovedKey;
+    public void setShowRemoveInfoLog(boolean showRemoveInfoLog) {
+        this.showRemoveInfoLog = showRemoveInfoLog;
     }
 
-    public boolean isShowRemovedValue() {
-        return showRemovedValue;
+    public boolean isShowLoadInfoLog() {
+        return showLoadInfoLog;
     }
 
-    public void setShowRemovedValue(boolean showRemovedValue) {
-        this.showRemovedValue = showRemovedValue;
+    public void setShowLoadInfoLog(boolean showLoadInfoLog) {
+        this.showLoadInfoLog = showLoadInfoLog;
+    }
+
+    public CacherValueLoader<K, V> getCacherValueLoader() {
+        return cacherValueLoader;
+    }
+
+    public void setCacherValueLoader(CacherValueLoader<K, V> cacherValueLoader) {
+        this.cacherValueLoader = cacherValueLoader;
+    }
+
+    public ExpireTimeLoader<K> getExpireTimeLoader() {
+        return expireTimeLoader;
+    }
+
+    public void setExpireTimeLoader(ExpireTimeLoader<K> expireTimeLoader) {
+        this.expireTimeLoader = expireTimeLoader;
+    }
+
+    public void setLoader(Long loadExpireTime, CacherValueLoader<K, V> cacherValueLoader) {
+        setLoader(k -> loadExpireTime, cacherValueLoader);
+    }
+
+    public void setLoader(ExpireTimeLoader<K> expireTimeLoader, CacherValueLoader<K, V> cacherValueLoader) {
+        this.expireTimeLoader = expireTimeLoader;
+        this.cacherValueLoader = cacherValueLoader;
     }
 
     public String getScheduleName() {

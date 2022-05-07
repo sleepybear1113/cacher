@@ -1,6 +1,8 @@
 package cn.xiejx.cacher;
 
 import cn.xiejx.cacher.cache.ExpireWayEnum;
+import cn.xiejx.cacher.loader.CacherValueLoader;
+import cn.xiejx.cacher.loader.ExpireTimeLoader;
 
 import java.util.concurrent.TimeUnit;
 
@@ -10,35 +12,37 @@ import java.util.concurrent.TimeUnit;
  * @author sleepybear
  * @date 2022/05/04 23:55
  */
-public class CacherBuilder {
+public class CacherBuilder<K, V> {
     static final int MAXIMUM_CAPACITY = 1 << 30;
 
-
-    private ExpireWayEnum expireWayEnum = ExpireWayEnum.AFTER_CREATE;
+    protected ExpireWayEnum expireWayEnum = ExpireWayEnum.AFTER_CREATE;
 
     /**
      * 旧缓存是否保持旧的过期方式
      */
-    private boolean keepOldExpireWay = true;
+    protected boolean keepOldExpireWay = true;
 
-    private int corePoolSize = 4;
-    private String scheduleName = "schedule-" + System.currentTimeMillis();
-    private long initialDelay = 0L;
-    private long delay = 60000L;
-    private TimeUnit timeUnit = TimeUnit.MILLISECONDS;
-    private boolean fixRate = true;
+    protected int corePoolSize = 4;
+    protected String scheduleName = "schedule-" + System.currentTimeMillis();
+    protected long initialDelay = 0L;
+    protected long delay = 60000L;
+    protected TimeUnit timeUnit = TimeUnit.MILLISECONDS;
+    protected boolean fixRate = true;
 
-    private int initialCapacity = 64;
-    private float loadFactor = 0.75F;
+    protected int initialCapacity = 64;
+    protected float loadFactor = 0.75F;
 
-    private boolean showExpireTime = false;
-    private boolean showRemovedKey = false;
-    private boolean showRemovedValue = false;
+    protected boolean showExpireTimeLog = false;
+    protected boolean showRemoveInfoLog = false;
+    protected boolean showLoadInfoLog = false;
+
+    protected CacherValueLoader<K, V> cacherValueLoader;
+    protected ExpireTimeLoader<K> expireTimeLoader = null;
 
     public CacherBuilder() {
     }
 
-    public CacherBuilder(CacherBuilder copy) {
+    public CacherBuilder(CacherBuilder<K, V> copy) {
         this.expireWayEnum = copy.expireWayEnum;
         this.keepOldExpireWay = copy.keepOldExpireWay;
         this.corePoolSize = copy.corePoolSize;
@@ -49,12 +53,14 @@ public class CacherBuilder {
         this.fixRate = copy.fixRate;
         this.initialCapacity = copy.initialCapacity;
         this.loadFactor = copy.loadFactor;
-        this.showExpireTime = copy.showExpireTime;
-        this.showRemovedKey = copy.showRemovedKey;
-        this.showRemovedValue = copy.showRemovedValue;
+        this.showExpireTimeLog = copy.showExpireTimeLog;
+        this.showRemoveInfoLog = copy.showRemoveInfoLog;
+        this.showLoadInfoLog = copy.showLoadInfoLog;
+        this.cacherValueLoader = copy.cacherValueLoader;
+        this.expireTimeLoader = copy.expireTimeLoader;
     }
 
-    public CacherBuilder expireWay(ExpireWayEnum expireWayEnum) {
+    public CacherBuilder<K, V> expireWay(ExpireWayEnum expireWayEnum) {
         if (expireWayEnum == null) {
             throw new IllegalArgumentException("expireWayEnum can not be null!");
         }
@@ -62,12 +68,12 @@ public class CacherBuilder {
         return this;
     }
 
-    public CacherBuilder keepExpireWay(boolean old) {
+    public CacherBuilder<K, V> keepExpireWay(boolean old) {
         this.keepOldExpireWay = true;
         return this;
     }
 
-    public CacherBuilder corePoolSize(int corePoolSize) {
+    public CacherBuilder<K, V> corePoolSize(int corePoolSize) {
         if (corePoolSize <= 0) {
             throw new IllegalArgumentException("corePoolSize <= 0!");
         }
@@ -75,7 +81,7 @@ public class CacherBuilder {
         return this;
     }
 
-    public CacherBuilder scheduleName(String scheduleName) {
+    public CacherBuilder<K, V> scheduleName(String scheduleName) {
         if (scheduleName == null || scheduleName.length() == 0) {
             throw new IllegalArgumentException("scheduleName can not be empty");
         }
@@ -83,7 +89,7 @@ public class CacherBuilder {
         return this;
     }
 
-    public CacherBuilder initialDelay(long initialDelay) {
+    public CacherBuilder<K, V> initialDelay(long initialDelay) {
         if (initialDelay <= 0) {
             throw new IllegalArgumentException("initialDelay <= 0!");
         }
@@ -91,7 +97,7 @@ public class CacherBuilder {
         return this;
     }
 
-    public CacherBuilder delay(long delay, TimeUnit timeUnit) {
+    public CacherBuilder<K, V> delay(long delay, TimeUnit timeUnit) {
         if (delay <= 0) {
             throw new IllegalArgumentException("delay <= 0!");
         }
@@ -103,12 +109,12 @@ public class CacherBuilder {
         return this;
     }
 
-    public CacherBuilder scheduleFixedWay(boolean fixRate) {
+    public CacherBuilder<K, V> scheduleFixedWay(boolean fixRate) {
         this.fixRate = fixRate;
         return this;
     }
 
-    public CacherBuilder initialCapacity(int initialCapacity) {
+    public CacherBuilder<K, V> initialCapacity(int initialCapacity) {
         if (initialCapacity < 0) {
             throw new IllegalArgumentException("Illegal initial capacity: " + initialCapacity);
         }
@@ -119,7 +125,7 @@ public class CacherBuilder {
         return this;
     }
 
-    public CacherBuilder loadFactor(float loadFactor) {
+    public CacherBuilder<K, V> loadFactor(float loadFactor) {
         if (loadFactor <= 0 || Float.isNaN(loadFactor)) {
             throw new IllegalArgumentException("Illegal load factor: " + loadFactor);
         }
@@ -127,29 +133,39 @@ public class CacherBuilder {
         return this;
     }
 
-    public CacherBuilder showExpireTime(boolean showExpireTime) {
-        this.showExpireTime = showExpireTime;
+    public CacherBuilder<K, V> showExpireTime(boolean showExpireTime) {
+        this.showExpireTimeLog = showExpireTime;
         return this;
     }
 
-    public CacherBuilder showRemovedKey(boolean showRemovedKey) {
-        this.showRemovedKey = showRemovedKey;
+    public CacherBuilder<K, V> showRemoveInfo(boolean showRemoveInfo) {
+        this.showRemoveInfoLog = showRemoveInfo;
         return this;
     }
 
-    public CacherBuilder showRemovedValue(boolean showRemovedValue) {
-        this.showRemovedValue = showRemovedValue;
+    public CacherBuilder<K, V> showLoadInfoLog(boolean showLoadInfoLog) {
+        this.showLoadInfoLog = showLoadInfoLog;
         return this;
     }
 
-    public CacherBuilder showAllLogs() {
-        this.showExpireTime = true;
-        this.showRemovedKey = true;
-        this.showRemovedValue = true;
+    public CacherBuilder<K, V> showAllLogs() {
+        this.showExpireTimeLog = true;
+        this.showRemoveInfoLog = true;
+        this.showLoadInfoLog = true;
         return this;
     }
 
-    public <K, V> Cacher<K, V> build() {
-        return new Cacher<>(expireWayEnum, keepOldExpireWay, corePoolSize, scheduleName, initialDelay, delay, timeUnit, fixRate, initialCapacity, loadFactor, showExpireTime, showRemovedKey, showRemovedValue);
+    public CacherBuilder<K, V> cacherLoader(Long loadExpireTime, CacherValueLoader<K, V> cacherValueLoader) {
+        return cacherLoader(k -> loadExpireTime, cacherValueLoader);
+    }
+
+    public CacherBuilder<K, V> cacherLoader(ExpireTimeLoader<K> expireTimeLoader, CacherValueLoader<K, V> cacherValueLoader) {
+        this.cacherValueLoader = cacherValueLoader;
+        this.expireTimeLoader = expireTimeLoader;
+        return this;
+    }
+
+    public Cacher<K, V> build() {
+        return new Cacher<>(expireWayEnum, keepOldExpireWay, corePoolSize, scheduleName, initialDelay, delay, timeUnit, fixRate, initialCapacity, loadFactor, showExpireTimeLog, showRemoveInfoLog, showLoadInfoLog, cacherValueLoader, expireTimeLoader);
     }
 }

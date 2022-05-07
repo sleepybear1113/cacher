@@ -6,7 +6,7 @@
 
     <groupId>cn.xiejx</groupId>
     <artifactId>cacher</artifactId>
-    <version>0.0.2</version>
+    <version>0.1.0</version>
 
     <name>cacher</name>
     <description>A Java Local Cache Tool - 一个 Java 本地缓存工具</description>

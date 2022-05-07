@@ -10,7 +10,7 @@ Maven 依赖导入
 <dependency>
     <groupId>cn.xiejx</groupId>
     <artifactId>cacher</artifactId>
-    <version>0.0.2</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 Java 使用
@@ -18,7 +18,7 @@ Java 使用
 public class CacherTest {
     public void test() {
         // 构建 CacherBuilder，填充相关参数
-        CacherBuilder cacherBuilder = new CacherBuilder()
+        CacherBuilder<Integer, String> cacherBuilder = new CacherBuilder<Integer, String>()
                 // 每隔 10 秒扫一遍 Map 清理过期
                 .delay(10, TimeUnit.SECONDS)
                 // 运行时展示清理日志
@@ -34,7 +34,7 @@ public class CacherTest {
         // 缓存修改为 aaa，过期时间修改为 5000 毫秒
         cacher.set(111, "aaa", 5000L);
         // 删除 key = 222 的缓存
-        cacher.remove(222);
+        String remove = cacher.remove(222);
         // 获取 key = 111 的缓存，过期时间仍为创建开始后 5000 毫秒
         String s1 = cacher.get(111);
         // 获取 key = 333 的缓存，过期时间刷新，从当前开始计时后 3500 毫秒
@@ -42,3 +42,22 @@ public class CacherTest {
     }
 }
 ```
+如果需要缓存失效的时候重新加载，那么可以如下操作
+```java
+public class CacherTest {
+    public void test() {
+        CacherBuilder<Integer, String> cacherBuilder1 = new CacherBuilder<Integer, String>()
+                // 设置 loader，过期时间 10000 毫秒，过期后调用 get(key) 刷新缓存
+                .cacherLoader(10000L, key -> get(key));
+
+        CacherBuilder<Integer, String> cacherBuilder2 = new CacherBuilder<Integer, String>()
+                // 设置 loader，过期时间调用 getKeyExpireTime 方法，过期后调用 get(key) 刷新缓存
+                .cacherLoader(key -> getKeyExpireTime(key), key -> get(key));
+    }
+}
+```
+# 更新日志
+## v0.1.0
+- (新增) 缓存过期后的重载 load 方法，使用函数式接口设计。
+- (新增) 2 个函数式 load 接口，一个用来获取过期时间，一个用来获取 value。
+- (新增) 相关日志、信息输出。
