@@ -24,7 +24,7 @@ public class CacherTest {
                 // 每隔 10 秒扫一遍 Map 清理过期
                 .delay(10, TimeUnit.SECONDS)
                 // 运行时展示清理日志
-                .showAllLogs().cacherLoader(10000L, key -> null);
+                .showAllLogs().cacherLoader(null, key -> null);
         // 生成 Cacher 对象
         Cacher<Integer, String> cacher = cacherBuilder.build();
         // 无过期的缓存

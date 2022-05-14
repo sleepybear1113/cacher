@@ -10,7 +10,7 @@ Maven 依赖导入
 <dependency>
     <groupId>cn.xiejx</groupId>
     <artifactId>cacher</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
 </dependency>
 ```
 Java 使用
@@ -57,6 +57,8 @@ public class CacherTest {
 }
 ```
 # 更新日志
+## v0.1.1
+- (优化) 更改变量包装类型
 ## v0.1.0
 - (新增) 缓存过期后的重载 load 方法，使用函数式接口设计。
 - (新增) 2 个函数式 load 接口，一个用来获取过期时间，一个用来获取 value。

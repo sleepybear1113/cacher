@@ -36,7 +36,7 @@ public class CacherBuilder<K, V> {
     protected boolean showRemoveInfoLog = false;
     protected boolean showLoadInfoLog = false;
 
-    protected CacherValueLoader<K, V> cacherValueLoader;
+    protected CacherValueLoader<K, V> cacherValueLoader = null;
     protected ExpireTimeLoader<K> expireTimeLoader = null;
 
     public CacherBuilder() {
@@ -155,7 +155,7 @@ public class CacherBuilder<K, V> {
         return this;
     }
 
-    public CacherBuilder<K, V> cacherLoader(Long loadExpireTime, CacherValueLoader<K, V> cacherValueLoader) {
+    public CacherBuilder<K, V> cacherLoader(long loadExpireTime, CacherValueLoader<K, V> cacherValueLoader) {
         return cacherLoader(k -> loadExpireTime, cacherValueLoader);
     }
 

@@ -221,7 +221,7 @@ public class Cacher<K, V> implements Serializable {
             }
             return null;
         }
-        Long expireTime = expireTimeLoader.getLoadExpireTime(key);
+        Long expireTime = expireTimeLoader == null ? null : expireTimeLoader.getLoadExpireTime(key);
         if (this.showLoadInfoLog) {
             log.info("[{}] load key = {}, expireTime = {}, value = {}", this.scheduleName, key, expireTime, value);
         }
