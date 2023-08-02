@@ -1,8 +1,9 @@
-package cn.xiejx.cacher;
+package cn.sleepybear.cacher;
 
-import cn.xiejx.cacher.cache.ExpireWayEnum;
-import cn.xiejx.cacher.loader.CacherValueLoader;
-import cn.xiejx.cacher.loader.ExpireTimeLoader;
+import cn.sleepybear.cacher.cache.ExpireWayEnum;
+import cn.sleepybear.cacher.loader.CacherValueLoader;
+import cn.sleepybear.cacher.loader.ExpireAction;
+import cn.sleepybear.cacher.loader.ExpireTimeLoader;
 
 import java.util.concurrent.TimeUnit;
 
@@ -38,6 +39,7 @@ public class CacherBuilder<K, V> {
 
     protected CacherValueLoader<K, V> cacherValueLoader = null;
     protected ExpireTimeLoader<K> expireTimeLoader = null;
+    protected ExpireAction<K> expireAction = null;
 
     public CacherBuilder() {
     }
@@ -58,6 +60,7 @@ public class CacherBuilder<K, V> {
         this.showLoadInfoLog = copy.showLoadInfoLog;
         this.cacherValueLoader = copy.cacherValueLoader;
         this.expireTimeLoader = copy.expireTimeLoader;
+        this.expireAction = copy.expireAction;
     }
 
     public CacherBuilder<K, V> expireWay(ExpireWayEnum expireWayEnum) {
@@ -82,7 +85,7 @@ public class CacherBuilder<K, V> {
     }
 
     public CacherBuilder<K, V> scheduleName(String scheduleName) {
-        if (scheduleName == null || scheduleName.length() == 0) {
+        if (scheduleName == null || scheduleName.isEmpty()) {
             throw new IllegalArgumentException("scheduleName can not be empty");
         }
         this.scheduleName = scheduleName;
@@ -166,6 +169,6 @@ public class CacherBuilder<K, V> {
     }
 
     public Cacher<K, V> build() {
-        return new Cacher<>(expireWayEnum, keepOldExpireWay, corePoolSize, scheduleName, initialDelay, delay, timeUnit, fixRate, initialCapacity, loadFactor, showExpireTimeLog, showRemoveInfoLog, showLoadInfoLog, cacherValueLoader, expireTimeLoader);
+        return new Cacher<>(expireWayEnum, keepOldExpireWay, corePoolSize, scheduleName, initialDelay, delay, timeUnit, fixRate, initialCapacity, loadFactor, showExpireTimeLog, showRemoveInfoLog, showLoadInfoLog, cacherValueLoader, expireTimeLoader, expireAction);
     }
 }

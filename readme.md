@@ -8,9 +8,9 @@
 Maven 依赖导入
 ```xml
 <dependency>
-    <groupId>cn.xiejx</groupId>
+    <groupId>cn.sleepybear</groupId>
     <artifactId>cacher</artifactId>
-    <version>0.1.1</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 Java 使用
@@ -57,8 +57,13 @@ public class CacherTest {
 }
 ```
 # 更新日志
+## v1.0.0
+- (更改) 更改包名。
+- (新增) 添加部分注释。
+- (新增) 新增过期后的操作 ExpireAction 类。
+- (升级) 升级 Maven 依赖。
 ## v0.1.1
-- (优化) 更改变量包装类型
+- (优化) 更改变量包装类型。
 ## v0.1.0
 - (新增) 缓存过期后的重载 load 方法，使用函数式接口设计。
 - (新增) 2 个函数式 load 接口，一个用来获取过期时间，一个用来获取 value。

@@ -1,6 +1,6 @@
-package cn.xiejx.cacher;
+package cn.sleepybear.cacher;
 
-import cn.xiejx.cacher.cache.ExpireWayEnum;
+import cn.sleepybear.cacher.cache.ExpireWayEnum;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

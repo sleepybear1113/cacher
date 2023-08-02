@@ -1,9 +1,10 @@
-package cn.xiejx.cacher;
+package cn.sleepybear.cacher;
 
-import cn.xiejx.cacher.cache.CacheObject;
-import cn.xiejx.cacher.cache.ExpireWayEnum;
-import cn.xiejx.cacher.loader.CacherValueLoader;
-import cn.xiejx.cacher.loader.ExpireTimeLoader;
+import cn.sleepybear.cacher.cache.CacheObject;
+import cn.sleepybear.cacher.cache.ExpireWayEnum;
+import cn.sleepybear.cacher.loader.CacherValueLoader;
+import cn.sleepybear.cacher.loader.ExpireAction;
+import cn.sleepybear.cacher.loader.ExpireTimeLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +56,9 @@ public class Cacher<K, V> implements Serializable {
 
     private ExpireTimeLoader<K> expireTimeLoader;
 
-    public Cacher(ExpireWayEnum expireWayEnum, boolean keepOldExpireWay, int corePoolSize, String scheduleName, long initialDelay, long delay, TimeUnit timeUnit, boolean fixRate, int initialCapacity, float loadFactor, boolean showExpireTimeLog, boolean showRemoveInfoLog, boolean showLoadInfoLog, CacherValueLoader<K, V> cacherValueLoader, ExpireTimeLoader<K> expireTimeLoader) {
+    private ExpireAction<K> expireAction;
+
+    public Cacher(ExpireWayEnum expireWayEnum, boolean keepOldExpireWay, int corePoolSize, String scheduleName, long initialDelay, long delay, TimeUnit timeUnit, boolean fixRate, int initialCapacity, float loadFactor, boolean showExpireTimeLog, boolean showRemoveInfoLog, boolean showLoadInfoLog, CacherValueLoader<K, V> cacherValueLoader, ExpireTimeLoader<K> expireTimeLoader, ExpireAction<K> expireAction) {
         this.expireWayEnum = expireWayEnum;
         this.keepOldExpireWay = keepOldExpireWay;
         this.showExpireTimeLog = showExpireTimeLog;
@@ -63,12 +66,13 @@ public class Cacher<K, V> implements Serializable {
         this.showLoadInfoLog = showLoadInfoLog;
         this.cacherValueLoader = cacherValueLoader;
         this.expireTimeLoader = expireTimeLoader;
+        this.expireAction = expireAction;
         MAP = new ConcurrentHashMap<>(initialCapacity, loadFactor);
         resetExpireSchedule(corePoolSize, scheduleName, initialDelay, delay, timeUnit, fixRate);
     }
 
     public Cacher(CacherBuilder<K, V> c) {
-        this(c.expireWayEnum, c.keepOldExpireWay, c.corePoolSize, c.scheduleName, c.initialDelay, c.delay, c.timeUnit, c.fixRate, c.initialCapacity, c.loadFactor, c.showExpireTimeLog, c.showRemoveInfoLog, c.showLoadInfoLog, c.cacherValueLoader, c.expireTimeLoader);
+        this(c.expireWayEnum, c.keepOldExpireWay, c.corePoolSize, c.scheduleName, c.initialDelay, c.delay, c.timeUnit, c.fixRate, c.initialCapacity, c.loadFactor, c.showExpireTimeLog, c.showRemoveInfoLog, c.showLoadInfoLog, c.cacherValueLoader, c.expireTimeLoader, c.expireAction);
     }
 
     public void put(K key, V value) {
@@ -207,7 +211,12 @@ public class Cacher<K, V> implements Serializable {
     }
 
     public CacheObject<V> removeReturnCacheObject(K key) {
-        return MAP.remove(key);
+        CacheObject<V> removed = MAP.remove(key);
+        if (expireAction != null) {
+            // 当缓存删除的时候，执行的操作
+            expireAction.expireAction(key);
+        }
+        return removed;
     }
 
     private CacheObject<V> load(K key) {
@@ -329,6 +338,20 @@ public class Cacher<K, V> implements Serializable {
     public void setLoader(ExpireTimeLoader<K> expireTimeLoader, CacherValueLoader<K, V> cacherValueLoader) {
         this.expireTimeLoader = expireTimeLoader;
         this.cacherValueLoader = cacherValueLoader;
+    }
+
+    public void setLoader(ExpireTimeLoader<K> expireTimeLoader, CacherValueLoader<K, V> cacherValueLoader, ExpireAction<K> expireAction) {
+        this.expireTimeLoader = expireTimeLoader;
+        this.cacherValueLoader = cacherValueLoader;
+        this.expireAction = expireAction;
+    }
+
+    public ExpireAction<K> getExpireAction() {
+        return expireAction;
+    }
+
+    public void setExpireAction(ExpireAction<K> expireAction) {
+        this.expireAction = expireAction;
     }
 
     public String getScheduleName() {
