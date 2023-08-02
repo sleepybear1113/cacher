@@ -9,7 +9,10 @@ package cn.sleepybear.cacher.loader;
 public interface ExpireAction<K, V> {
     /**
      * 缓存过期时的操作，可以是删除缓存，也可以是重新加载缓存，也可以是其他操作，比如删除对应的本地文件
-     * @param key key
+     *
+     * @param key  key
+     * @param value value
+     * @param useExpireAction 是否走 expireAction
      */
-    void expireAction(K key, V value);
+    void expireAction(K key, V value, boolean useExpireAction);
 }

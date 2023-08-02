@@ -137,7 +137,7 @@ public class Cacher<K, V> implements Serializable {
 
         if (cacheObject != null) {
             // 如果 value 存在，那么就一定是过期的，直接删除就行了
-            removeReturnCacheObject(key);
+            removeReturnCacheObject(key, true);
             // 打印日志
             if (this.showRemoveInfoLog) {
                 log.info("[{}] expire: key = {}, value = {}", this.scheduleName, key, cacheObject.getObjPure().toString());
@@ -206,15 +206,25 @@ public class Cacher<K, V> implements Serializable {
      * @return 缓存对象
      */
     public V remove(K key) {
-        CacheObject<V> cacheObject = removeReturnCacheObject(key);
+        return remove(key, false);
+    }
+
+    public V remove(K key, boolean useExpireAction) {
+        CacheObject<V> cacheObject = removeReturnCacheObject(key, useExpireAction);
         return cacheObject == null ? null : cacheObject.getObj();
     }
 
-    public CacheObject<V> removeReturnCacheObject(K key) {
+    /**
+     * 删除缓存
+     * @param key key
+     * @param useExpireAction 是否走 expireAction
+     * @return CacheObject
+     */
+    public CacheObject<V> removeReturnCacheObject(K key, boolean useExpireAction) {
         CacheObject<V> removed = MAP.remove(key);
         if (expireAction != null) {
             // 当缓存删除的时候，执行的操作
-            expireAction.expireAction(key, removed);
+            expireAction.expireAction(key, removed, useExpireAction);
         }
         return removed;
     }
