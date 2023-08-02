@@ -10,7 +10,7 @@ Maven 依赖导入
 <dependency>
     <groupId>cn.sleepybear</groupId>
     <artifactId>cacher</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.4</version>
 </dependency>
 ```
 Java 使用
@@ -57,6 +57,8 @@ public class CacherTest {
 }
 ```
 # 更新日志
+## v1.0.4
+- (优化) 优化 ExpireAction 类。
 ## v1.0.0
 - (更改) 更改包名。
 - (新增) 添加部分注释。
