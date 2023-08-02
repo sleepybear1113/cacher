@@ -159,12 +159,36 @@ public class CacherBuilder<K, V> {
     }
 
     public CacherBuilder<K, V> cacherLoader(long loadExpireTime, CacherValueLoader<K, V> cacherValueLoader) {
-        return cacherLoader(k -> loadExpireTime, cacherValueLoader);
+        return cacherLoader(loadExpireTime, cacherValueLoader, null);
+    }
+
+    public CacherBuilder<K, V> cacherLoader(long loadExpireTime, CacherValueLoader<K, V> cacherValueLoader, ExpireAction<K> expireAction) {
+        return cacherLoader(k -> loadExpireTime, cacherValueLoader, expireAction);
     }
 
     public CacherBuilder<K, V> cacherLoader(ExpireTimeLoader<K> expireTimeLoader, CacherValueLoader<K, V> cacherValueLoader) {
-        this.cacherValueLoader = cacherValueLoader;
+        return cacherLoader(expireTimeLoader, cacherValueLoader, null);
+    }
+
+    public CacherBuilder<K, V> cacherLoader(ExpireTimeLoader<K> expireTimeLoader, CacherValueLoader<K, V> cacherValueLoader, ExpireAction<K> expireAction) {
         this.expireTimeLoader = expireTimeLoader;
+        this.cacherValueLoader = cacherValueLoader;
+        this.expireAction = expireAction;
+        return this;
+    }
+
+    public CacherBuilder<K, V> cacherLoader(ExpireTimeLoader<K> expireTimeLoader) {
+        this.expireTimeLoader = expireTimeLoader;
+        return this;
+    }
+
+    public CacherBuilder<K, V> cacherLoader(CacherValueLoader<K, V> cacherValueLoader) {
+        this.cacherValueLoader = cacherValueLoader;
+        return this;
+    }
+
+    public CacherBuilder<K, V> cacherLoader(ExpireAction<K> expireAction) {
+        this.expireAction = expireAction;
         return this;
     }
 
