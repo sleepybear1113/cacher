@@ -1,5 +1,6 @@
 package cn.sleepybear.cacher;
 
+import cn.sleepybear.cacher.cache.CacheObject;
 import cn.sleepybear.cacher.cache.ExpireWayEnum;
 import cn.sleepybear.cacher.loader.CacherValueLoader;
 import cn.sleepybear.cacher.loader.ExpireAction;
@@ -39,7 +40,7 @@ public class CacherBuilder<K, V> {
 
     protected CacherValueLoader<K, V> cacherValueLoader = null;
     protected ExpireTimeLoader<K> expireTimeLoader = null;
-    protected ExpireAction<K> expireAction = null;
+    protected ExpireAction<K, CacheObject<V>> expireAction = null;
 
     public CacherBuilder() {
     }
@@ -162,7 +163,7 @@ public class CacherBuilder<K, V> {
         return cacherLoader(loadExpireTime, cacherValueLoader, null);
     }
 
-    public CacherBuilder<K, V> cacherLoader(long loadExpireTime, CacherValueLoader<K, V> cacherValueLoader, ExpireAction<K> expireAction) {
+    public CacherBuilder<K, V> cacherLoader(long loadExpireTime, CacherValueLoader<K, V> cacherValueLoader, ExpireAction<K, CacheObject<V>> expireAction) {
         return cacherLoader(k -> loadExpireTime, cacherValueLoader, expireAction);
     }
 
@@ -170,7 +171,7 @@ public class CacherBuilder<K, V> {
         return cacherLoader(expireTimeLoader, cacherValueLoader, null);
     }
 
-    public CacherBuilder<K, V> cacherLoader(ExpireTimeLoader<K> expireTimeLoader, CacherValueLoader<K, V> cacherValueLoader, ExpireAction<K> expireAction) {
+    public CacherBuilder<K, V> cacherLoader(ExpireTimeLoader<K> expireTimeLoader, CacherValueLoader<K, V> cacherValueLoader, ExpireAction<K, CacheObject<V>> expireAction) {
         this.expireTimeLoader = expireTimeLoader;
         this.cacherValueLoader = cacherValueLoader;
         this.expireAction = expireAction;
@@ -187,7 +188,7 @@ public class CacherBuilder<K, V> {
         return this;
     }
 
-    public CacherBuilder<K, V> cacherLoader(ExpireAction<K> expireAction) {
+    public CacherBuilder<K, V> cacherLoader(ExpireAction<K, CacheObject<V>> expireAction) {
         this.expireAction = expireAction;
         return this;
     }

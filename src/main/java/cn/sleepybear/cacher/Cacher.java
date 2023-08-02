@@ -56,9 +56,9 @@ public class Cacher<K, V> implements Serializable {
 
     private ExpireTimeLoader<K> expireTimeLoader;
 
-    private ExpireAction<K> expireAction;
+    private ExpireAction<K, CacheObject<V>> expireAction;
 
-    public Cacher(ExpireWayEnum expireWayEnum, boolean keepOldExpireWay, int corePoolSize, String scheduleName, long initialDelay, long delay, TimeUnit timeUnit, boolean fixRate, int initialCapacity, float loadFactor, boolean showExpireTimeLog, boolean showRemoveInfoLog, boolean showLoadInfoLog, CacherValueLoader<K, V> cacherValueLoader, ExpireTimeLoader<K> expireTimeLoader, ExpireAction<K> expireAction) {
+    public Cacher(ExpireWayEnum expireWayEnum, boolean keepOldExpireWay, int corePoolSize, String scheduleName, long initialDelay, long delay, TimeUnit timeUnit, boolean fixRate, int initialCapacity, float loadFactor, boolean showExpireTimeLog, boolean showRemoveInfoLog, boolean showLoadInfoLog, CacherValueLoader<K, V> cacherValueLoader, ExpireTimeLoader<K> expireTimeLoader, ExpireAction<K, CacheObject<V>> expireAction) {
         this.expireWayEnum = expireWayEnum;
         this.keepOldExpireWay = keepOldExpireWay;
         this.showExpireTimeLog = showExpireTimeLog;
@@ -214,7 +214,7 @@ public class Cacher<K, V> implements Serializable {
         CacheObject<V> removed = MAP.remove(key);
         if (expireAction != null) {
             // 当缓存删除的时候，执行的操作
-            expireAction.expireAction(key);
+            expireAction.expireAction(key, removed);
         }
         return removed;
     }
@@ -340,17 +340,17 @@ public class Cacher<K, V> implements Serializable {
         this.cacherValueLoader = cacherValueLoader;
     }
 
-    public void setLoader(ExpireTimeLoader<K> expireTimeLoader, CacherValueLoader<K, V> cacherValueLoader, ExpireAction<K> expireAction) {
+    public void setLoader(ExpireTimeLoader<K> expireTimeLoader, CacherValueLoader<K, V> cacherValueLoader, ExpireAction<K, CacheObject<V>> expireAction) {
         this.expireTimeLoader = expireTimeLoader;
         this.cacherValueLoader = cacherValueLoader;
         this.expireAction = expireAction;
     }
 
-    public ExpireAction<K> getExpireAction() {
+    public ExpireAction<K, CacheObject<V>> getExpireAction() {
         return expireAction;
     }
 
-    public void setExpireAction(ExpireAction<K> expireAction) {
+    public void setExpireAction(ExpireAction<K, CacheObject<V>> expireAction) {
         this.expireAction = expireAction;
     }
 

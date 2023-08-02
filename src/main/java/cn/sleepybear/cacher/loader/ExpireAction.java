@@ -6,10 +6,10 @@ package cn.sleepybear.cacher.loader;
  * @date 2023/08/02 22:48
  */
 @FunctionalInterface
-public interface ExpireAction<K> {
+public interface ExpireAction<K, V> {
     /**
      * 缓存过期时的操作，可以是删除缓存，也可以是重新加载缓存，也可以是其他操作，比如删除对应的本地文件
      * @param key key
      */
-    void expireAction(K key);
+    void expireAction(K key, V value);
 }
