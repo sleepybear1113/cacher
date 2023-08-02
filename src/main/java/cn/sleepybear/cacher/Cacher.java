@@ -222,7 +222,7 @@ public class Cacher<K, V> implements Serializable {
      */
     public CacheObject<V> removeReturnCacheObject(K key, boolean useExpireAction) {
         CacheObject<V> removed = MAP.remove(key);
-        if (expireAction != null) {
+        if (removed != null && expireAction != null) {
             // 当缓存删除的时候，执行的操作
             expireAction.expireAction(key, removed, useExpireAction);
         }
