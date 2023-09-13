@@ -6,7 +6,7 @@
 
     <groupId>cn.sleepybear</groupId>
     <artifactId>cacher</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
 
     <name>cacher</name>
     <description>A Java Local Cache Tool - 一个 Java 本地缓存工具</description>

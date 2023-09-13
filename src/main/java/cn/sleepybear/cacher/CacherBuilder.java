@@ -33,6 +33,7 @@ public class CacherBuilder<K, V> {
 
     protected int initialCapacity = 64;
     protected float loadFactor = 0.75F;
+    protected K nullKey;
 
     protected boolean showExpireTimeLog = false;
     protected boolean showRemoveInfoLog = false;
@@ -56,6 +57,7 @@ public class CacherBuilder<K, V> {
         this.fixRate = copy.fixRate;
         this.initialCapacity = copy.initialCapacity;
         this.loadFactor = copy.loadFactor;
+        this.nullKey = copy.nullKey;
         this.showExpireTimeLog = copy.showExpireTimeLog;
         this.showRemoveInfoLog = copy.showRemoveInfoLog;
         this.showLoadInfoLog = copy.showLoadInfoLog;
@@ -137,6 +139,11 @@ public class CacherBuilder<K, V> {
         return this;
     }
 
+    public CacherBuilder<K, V> allowNullKey(K nullKey) {
+        this.nullKey = nullKey;
+        return this;
+    }
+
     public CacherBuilder<K, V> showExpireTime(boolean showExpireTime) {
         this.showExpireTimeLog = showExpireTime;
         return this;
@@ -194,6 +201,6 @@ public class CacherBuilder<K, V> {
     }
 
     public Cacher<K, V> build() {
-        return new Cacher<>(expireWayEnum, keepOldExpireWay, corePoolSize, scheduleName, initialDelay, delay, timeUnit, fixRate, initialCapacity, loadFactor, showExpireTimeLog, showRemoveInfoLog, showLoadInfoLog, cacherValueLoader, expireTimeLoader, expireAction);
+        return new Cacher<>(expireWayEnum, keepOldExpireWay, corePoolSize, scheduleName, initialDelay, delay, timeUnit, fixRate, initialCapacity, loadFactor, nullKey, showExpireTimeLog, showRemoveInfoLog, showLoadInfoLog, cacherValueLoader, expireTimeLoader, expireAction);
     }
 }

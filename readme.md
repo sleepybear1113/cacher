@@ -57,6 +57,8 @@ public class CacherTest {
 }
 ```
 # 更新日志
+## v1.0.5
+- (新增) 允许 put key 为 null。
 ## v1.0.4
 - (优化) 优化 ExpireAction 类。
 ## v1.0.0

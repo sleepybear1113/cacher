@@ -44,4 +44,26 @@ public class CacherTest {
         // 获取 key = 333 的缓存，过期时间刷新，从当前开始计时后 3500 毫秒
         String s2 = cacher.get(333);
     }
+
+    @Test
+    public void test2() {
+        // 构建 CacherBuilder，填充相关参数
+        CacherBuilder<Integer, String> cacherBuilder = new CacherBuilder<Integer, String>()
+                // 每隔 10 秒扫一遍 Map 清理过期
+                .delay(10, TimeUnit.SECONDS)
+                .allowNullKey(-1357643513)
+                // 运行时展示清理日志
+                .showAllLogs()
+                .cacherLoader(null, key -> null)
+                .cacherLoader((key, cacheObject, auto) -> log.info("removed key = {}, cacheObject = {}", key, cacheObject.getObjPure()));
+        // 生成 Cacher 对象
+        Cacher<Integer, String> cacher = cacherBuilder.build();
+
+        cacher.put(null, "123");
+        cacher.put(281, "777");
+        String r = null;
+        cacher.put(555, r);
+        System.out.println(cacher.get(555));
+        System.out.println(cacher.get(null));
+    }
 }

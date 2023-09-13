@@ -30,6 +30,8 @@ public class Cacher<K, V> implements Serializable {
     @Serial
     private static final long serialVersionUID = -8803248750867836882L;
 
+    private K nullKey;
+
     private final Map<K, CacheObject<V>> MAP;
 
     private ScheduledExecutorService scheduledExecutorService;
@@ -58,7 +60,7 @@ public class Cacher<K, V> implements Serializable {
 
     private ExpireAction<K, CacheObject<V>> expireAction;
 
-    public Cacher(ExpireWayEnum expireWayEnum, boolean keepOldExpireWay, int corePoolSize, String scheduleName, long initialDelay, long delay, TimeUnit timeUnit, boolean fixRate, int initialCapacity, float loadFactor, boolean showExpireTimeLog, boolean showRemoveInfoLog, boolean showLoadInfoLog, CacherValueLoader<K, V> cacherValueLoader, ExpireTimeLoader<K> expireTimeLoader, ExpireAction<K, CacheObject<V>> expireAction) {
+    public Cacher(ExpireWayEnum expireWayEnum, boolean keepOldExpireWay, int corePoolSize, String scheduleName, long initialDelay, long delay, TimeUnit timeUnit, boolean fixRate, int initialCapacity, float loadFactor, K nullKey, boolean showExpireTimeLog, boolean showRemoveInfoLog, boolean showLoadInfoLog, CacherValueLoader<K, V> cacherValueLoader, ExpireTimeLoader<K> expireTimeLoader, ExpireAction<K, CacheObject<V>> expireAction) {
         this.expireWayEnum = expireWayEnum;
         this.keepOldExpireWay = keepOldExpireWay;
         this.showExpireTimeLog = showExpireTimeLog;
@@ -67,15 +69,19 @@ public class Cacher<K, V> implements Serializable {
         this.cacherValueLoader = cacherValueLoader;
         this.expireTimeLoader = expireTimeLoader;
         this.expireAction = expireAction;
+        this.nullKey = nullKey;
         MAP = new ConcurrentHashMap<>(initialCapacity, loadFactor);
         resetExpireSchedule(corePoolSize, scheduleName, initialDelay, delay, timeUnit, fixRate);
     }
 
     public Cacher(CacherBuilder<K, V> c) {
-        this(c.expireWayEnum, c.keepOldExpireWay, c.corePoolSize, c.scheduleName, c.initialDelay, c.delay, c.timeUnit, c.fixRate, c.initialCapacity, c.loadFactor, c.showExpireTimeLog, c.showRemoveInfoLog, c.showLoadInfoLog, c.cacherValueLoader, c.expireTimeLoader, c.expireAction);
+        this(c.expireWayEnum, c.keepOldExpireWay, c.corePoolSize, c.scheduleName, c.initialDelay, c.delay, c.timeUnit, c.fixRate, c.initialCapacity, c.loadFactor, c.nullKey, c.showExpireTimeLog, c.showRemoveInfoLog, c.showLoadInfoLog, c.cacherValueLoader, c.expireTimeLoader, c.expireAction);
     }
 
     public void put(K key, V value) {
+        if (key == null && nullKey != null) {
+            key = nullKey;
+        }
         put(key, value, null, this.expireWayEnum);
     }
 
@@ -88,7 +94,11 @@ public class Cacher<K, V> implements Serializable {
     }
 
     public void put(K key, CacheObject<V> cacheObject) {
-        MAP.put(key, cacheObject);
+        if (key == null) {
+            MAP.put(nullKey, cacheObject);
+        } else {
+            MAP.put(key, cacheObject);
+        }
     }
 
     public void set(K key, V value) {
@@ -116,12 +126,21 @@ public class Cacher<K, V> implements Serializable {
         return cacheObject.getObjPure();
     }
 
+    public V getIfAbsent(K key, V absentValue) {
+        V v = get(key);
+        return v == null ? absentValue : v;
+    }
+
     public CacheObject<V> getCacheObject(K key) {
         CacheObject<V> cacheObjectPure = getCacheObjectPure(key);
         return cacheObjectPure == null ? null : cacheObjectPure.getCacheObject();
     }
 
     public CacheObject<V> getCacheObjectPure(K key) {
+        if (key == null && this.nullKey != null) {
+            // 如果允许 key 为 null 那么使用默认的 nullKey
+            key = nullKey;
+        }
         // 先获取 value
         CacheObject<V> cacheObject = MAP.get(key);
         // 判断 value 是否存在
@@ -301,6 +320,14 @@ public class Cacher<K, V> implements Serializable {
         this.keepOldExpireWay = false;
     }
 
+    public K getNullKey() {
+        return nullKey;
+    }
+
+    public void setNullKey(K nullKey) {
+        this.nullKey = nullKey;
+    }
+
     public boolean isShowExpireTimeLog() {
         return showExpireTimeLog;
     }
@@ -366,5 +393,20 @@ public class Cacher<K, V> implements Serializable {
 
     public String getScheduleName() {
         return scheduleName;
+    }
+
+    private static String getRandomStr(int length) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            int random = (int) (Math.random() * 62);
+            if (random < 10) {
+                sb.append(random);
+            } else if (random < 36) {
+                sb.append((char) (random + 55));
+            } else {
+                sb.append((char) (random + 61));
+            }
+        }
+        return sb.toString();
     }
 }
